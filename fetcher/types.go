@@ -1,7 +1,5 @@
 package fetcher
 
-import "time"
-
 type (
 	Id       int
 	Interval float64
@@ -17,8 +15,8 @@ type (
 	}
 
 	Result struct {
-		Response  string
-		Duration  time.Duration
-		CreatedAt time.Time
+		Response  *string `json:"response"`
+		Duration  float64 `json:"duration"`
+		CreatedAt float64 `json:"created_at"`
 	}
 )
