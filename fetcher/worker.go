@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -46,6 +47,8 @@ var (
 	mutex        = &sync.Mutex{}
 )
 
+var NotFoundErr = errors.New("Resource not found")
+
 func Save(t Task) Id {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -74,6 +77,20 @@ func Save(t Task) Id {
 }
 
 func Remove(id Id) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	w, ok := workers[id]
+	if !ok {
+		return NotFoundErr
+	}
+
+	w.stop()
+
+	delete(workers, id)
+	delete(results, id)
+	delete(urlToId, w.Url)
+
 	return nil
 }
 

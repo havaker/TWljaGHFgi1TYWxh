@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi"
 	"github.com/havaker/TWljaGHFgi1TYWxh/fetcher"
@@ -33,6 +34,15 @@ func createHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func deleteHandler(w http.ResponseWriter, req *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(req, "id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := fetcher.Remove(fetcher.Id(id)); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+	}
 }
 
 func listHandler(w http.ResponseWriter, req *http.Request) {
