@@ -13,17 +13,18 @@ type limitedReadCloser struct {
 
 var ErrBodyLimitExceeded = errors.New("middleware: body limit exceeded")
 
-func BodyLimit(limit int) func(next http.Handler) http.Handler {
+func BodyLimit(limit int, method string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
-			if r.ContentLength > int64(limit) {
-				w.WriteHeader(http.StatusRequestEntityTooLarge)
-				return
-			}
+			if r.Method == method {
+				if r.ContentLength > int64(limit) {
+					w.WriteHeader(http.StatusRequestEntityTooLarge)
+					return
+				}
 
-			lrc := limitedReadCloser{limit: limit, reader: r.Body}
-			r.Body = &lrc
+				r.Body = &limitedReadCloser{limit: limit, reader: r.Body}
+			}
 
 			next.ServeHTTP(w, r)
 		}
