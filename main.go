@@ -46,9 +46,27 @@ func deleteHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func listHandler(w http.ResponseWriter, req *http.Request) {
+	fetchers := fetcher.List()
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(fetchers)
 }
 
 func historyHandler(w http.ResponseWriter, req *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(req, "id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	history, err := fetcher.History(fetcher.Id(id))
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(history)
 }
 
 const MB = 1000 * 1000
