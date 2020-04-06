@@ -7,13 +7,13 @@ type (
 	Interval float64
 
 	Task struct {
-		Url string
-		Interval
+		Url      string `json:"url"`
+		Interval `json:"interval"`
 	}
 
 	Fetcher struct {
 		Task
-		Id
+		Id `json:"id"`
 	}
 
 	Result struct {

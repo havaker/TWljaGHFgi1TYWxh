@@ -30,6 +30,7 @@ func createHandler(w http.ResponseWriter, req *http.Request) {
 
 	id := fetcher.Save(t)
 
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, "{\"id\": %d}\n", id)
 }
 

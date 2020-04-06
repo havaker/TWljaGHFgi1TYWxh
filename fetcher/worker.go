@@ -10,11 +10,10 @@ import (
 type worker struct {
 	finish chan struct{}
 	update chan Interval
-	Fetcher
 }
 
-func (w *worker) run() {
-	ticker := time.NewTicker(time.Second * time.Duration(w.Interval))
+func (w *worker) run(initial Interval, s *state) {
+	ticker := time.NewTicker(time.Second * time.Duration(initial))
 	defer ticker.Stop()
 
 	for {
@@ -25,8 +24,7 @@ func (w *worker) run() {
 			return
 		case interval := <-w.update:
 			ticker.Stop()
-			w.Interval = interval
-			ticker = time.NewTicker(time.Second * time.Duration(w.Interval))
+			ticker = time.NewTicker(time.Second * time.Duration(interval))
 		}
 	}
 }
@@ -39,9 +37,14 @@ func (w *worker) updateInterval(i Interval) {
 	w.update <- i
 }
 
+type state struct {
+	Fetcher
+	results []Result
+}
+
 var (
 	workers      = make(map[Id]*worker)
-	results      = make(map[Id]([]Result))
+	db           = make(map[Id]*state)
 	urlToId      = make(map[string]Id)
 	available Id = 1
 	mutex        = &sync.Mutex{}
@@ -59,16 +62,20 @@ func Save(t Task) Id {
 		available++
 
 		w := &worker{
-			finish:  make(chan struct{}),
-			update:  make(chan Interval),
+			finish: make(chan struct{}),
+			update: make(chan Interval),
+		}
+
+		s := &state{
 			Fetcher: Fetcher{Task: t, Id: id},
+			results: []Result{},
 		}
 
 		workers[id] = w
-		results[id] = []Result{}
+		db[id] = s
 		urlToId[t.Url] = id
 
-		go w.run()
+		go w.run(s.Interval, s)
 	} else {
 		workers[id].updateInterval(t.Interval)
 	}
@@ -88,14 +95,22 @@ func Remove(id Id) error {
 	w.stop()
 
 	delete(workers, id)
-	delete(results, id)
-	delete(urlToId, w.Url)
+	delete(urlToId, db[id].Url)
+	delete(db, id)
 
 	return nil
 }
 
 func List() []Fetcher {
-	return nil
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	f := []Fetcher{}
+	for _, s := range db {
+		f = append(f, s.Fetcher)
+	}
+
+	return f
 }
 
 func History(id Id) ([]Result, error) {
