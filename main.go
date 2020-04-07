@@ -17,7 +17,10 @@ func createHandler(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&t)
 
-	if err != nil {
+	if err == middleware.ErrBodyLimitExceeded {
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		return
+	} else if err != nil {
 		log.Printf("%s\n", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return

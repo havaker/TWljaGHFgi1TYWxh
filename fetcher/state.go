@@ -64,8 +64,8 @@ func Save(t Task) ID {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	id, ok := urlToID[t.URL]
-	if !ok {
+	id, found := urlToID[t.URL]
+	if !found {
 		id = available
 		available++
 
@@ -86,6 +86,7 @@ func Save(t Task) ID {
 		go w.run(s.Interval, s)
 	} else {
 		workers[id].updateInterval(t.Interval)
+		db[id].Interval = t.Interval
 	}
 
 	return id
@@ -96,8 +97,8 @@ func Remove(id ID) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	w, ok := workers[id]
-	if !ok {
+	w, found := workers[id]
+	if !found {
 		return ErrNotFound
 	}
 
@@ -128,8 +129,8 @@ func History(id ID) ([]Result, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	s, ok := db[id]
-	if !ok {
+	s, found := db[id]
+	if !found {
 		return nil, ErrNotFound
 	}
 
