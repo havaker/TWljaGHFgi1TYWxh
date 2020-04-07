@@ -1,19 +1,24 @@
 package fetcher
 
 type (
-	Id       int
+	// ID is resource identifier
+	ID int
+	// Interval is type used to store time duration, in seconds
 	Interval float64
 
+	// Task stores information used to create worker
 	Task struct {
-		Url      string `json:"url"`
+		URL      string `json:"url"`
 		Interval `json:"interval"`
 	}
 
+	// Fetcher stores information used to describe worker
 	Fetcher struct {
 		Task
-		Id `json:"id"`
+		ID `json:"id"`
 	}
 
+	// Result stores data downloaded by worker
 	Result struct {
 		Response  *string `json:"response"`
 		Duration  float64 `json:"duration"`

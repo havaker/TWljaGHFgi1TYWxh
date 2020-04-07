@@ -13,8 +13,8 @@ type state struct {
 	results []Result
 }
 
-func (s *state) downloadUrl(c http.Client) *string {
-	resp, err := c.Get(s.Url)
+func (s *state) downloadURL(c http.Client) *string {
+	resp, err := c.Get(s.URL)
 	if err != nil {
 		return nil
 	}
@@ -36,7 +36,7 @@ func (s *state) fetch() {
 	}
 
 	start := time.Now()
-	data := s.downloadUrl(client)
+	data := s.downloadURL(client)
 	end := time.Now()
 
 	res.Response = data
@@ -49,20 +49,22 @@ func (s *state) fetch() {
 }
 
 var (
-	workers      = make(map[Id]*worker)
-	db           = make(map[Id]*state)
-	urlToId      = make(map[string]Id)
-	available Id = 1
+	workers      = make(map[ID]*worker)
+	db           = make(map[ID]*state)
+	urlToID      = make(map[string]ID)
+	available ID = 1
 	mutex        = &sync.Mutex{}
 )
 
-var NotFoundErr = errors.New("Resource not found")
+// ErrNotFound is an error returned when resource could not be found
+var ErrNotFound = errors.New("Resource not found")
 
-func Save(t Task) Id {
+// Save starts or updates worker, which processes given Task
+func Save(t Task) ID {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	id, ok := urlToId[t.Url]
+	id, ok := urlToID[t.URL]
 	if !ok {
 		id = available
 		available++
@@ -73,13 +75,13 @@ func Save(t Task) Id {
 		}
 
 		s := &state{
-			Fetcher: Fetcher{Task: t, Id: id},
+			Fetcher: Fetcher{Task: t, ID: id},
 			results: []Result{},
 		}
 
 		workers[id] = w
 		db[id] = s
-		urlToId[t.Url] = id
+		urlToID[t.URL] = id
 
 		go w.run(s.Interval, s)
 	} else {
@@ -89,24 +91,26 @@ func Save(t Task) Id {
 	return id
 }
 
-func Remove(id Id) error {
+// Remove deletes worker with given id, and state associated with it
+func Remove(id ID) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	w, ok := workers[id]
 	if !ok {
-		return NotFoundErr
+		return ErrNotFound
 	}
 
 	w.stop()
 
 	delete(workers, id)
-	delete(urlToId, db[id].Url)
+	delete(urlToID, db[id].URL)
 	delete(db, id)
 
 	return nil
 }
 
+// List returns list of all workers
 func List() []Fetcher {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -119,13 +123,14 @@ func List() []Fetcher {
 	return f
 }
 
-func History(id Id) ([]Result, error) {
+// History returns data downloaded by worker identified by id
+func History(id ID) ([]Result, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	s, ok := db[id]
 	if !ok {
-		return nil, NotFoundErr
+		return nil, ErrNotFound
 	}
 
 	// TODO copy?

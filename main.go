@@ -23,7 +23,7 @@ func createHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if t.Interval == 0 || t.Url == "" {
+	if t.Interval == 0 || t.URL == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -41,7 +41,7 @@ func deleteHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := fetcher.Remove(fetcher.Id(id)); err != nil {
+	if err := fetcher.Remove(fetcher.ID(id)); err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
 }
@@ -60,7 +60,7 @@ func historyHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	history, err := fetcher.History(fetcher.Id(id))
+	history, err := fetcher.History(fetcher.ID(id))
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -70,11 +70,11 @@ func historyHandler(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(history)
 }
 
-const MB = 1000 * 1000
+const mb = 1000 * 1000
 
 func main() {
 	r := chi.NewRouter()
-	r.Use(middleware.BodyLimit(MB, http.MethodPost))
+	r.Use(middleware.BodyLimit(mb, http.MethodPost))
 	r.Route("/api/fetcher", func(r chi.Router) {
 		r.Post("/", createHandler)
 		r.Get("/", listHandler)

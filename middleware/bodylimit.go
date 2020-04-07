@@ -11,8 +11,12 @@ type limitedReadCloser struct {
 	reader      io.ReadCloser
 }
 
+// ErrBodyLimitExceeded is an error returned when request body is too large
 var ErrBodyLimitExceeded = errors.New("middleware: body limit exceeded")
 
+// BodyLimit is a middleware that discards requests with Content-Length larger
+// then given limit, and wraps request.Body with reader that returns error
+// when reading above limit
 func BodyLimit(limit int, method string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
