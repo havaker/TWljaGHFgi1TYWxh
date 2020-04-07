@@ -73,11 +73,12 @@ func historyHandler(w http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(w).Encode(history)
 }
 
-const mb = 1000 * 1000
-
 func main() {
 	r := chi.NewRouter()
-	r.Use(middleware.BodyLimit(mb, http.MethodPost))
+
+	MB := 1000 * 1000
+	r.Use(middleware.BodyLimit(MB, http.MethodPost))
+
 	r.Route("/api/fetcher", func(r chi.Router) {
 		r.Post("/", createHandler)
 		r.Get("/", listHandler)
