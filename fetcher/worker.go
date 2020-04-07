@@ -11,6 +11,8 @@ func (w *worker) run(initial Interval, s *state) {
 	ticker := time.NewTicker(time.Second * time.Duration(initial))
 	defer ticker.Stop()
 
+	go s.fetch()
+
 	for {
 		select {
 		case <-ticker.C:

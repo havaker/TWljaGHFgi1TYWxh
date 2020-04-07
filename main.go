@@ -23,7 +23,7 @@ func createHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if t.Interval == 0 || t.URL == "" {
+	if t.Interval <= 0 || t.URL == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
