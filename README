@@ -1,0 +1,8 @@
+Running:
+    go run .
+
+Testing:
+    go test .
+or (with server running in background)
+    bash curl_tests.sh
+    echo $?
