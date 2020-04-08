@@ -8,30 +8,35 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
+	chimid "github.com/go-chi/chi/middleware"
 	"github.com/havaker/TWljaGHFgi1TYWxh/fetcher"
 	"github.com/havaker/TWljaGHFgi1TYWxh/middleware"
 )
 
+var fetch *fetcher.Fetcher
+
 func createHandler(w http.ResponseWriter, req *http.Request) {
-	var t fetcher.Task
+	var t fetcher.TaskRequest
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&t)
 
-	if err == middleware.ErrBodyLimitExceeded {
-		w.WriteHeader(http.StatusRequestEntityTooLarge)
-		return
-	} else if err != nil {
-		log.Printf("%s\n", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
+	if err != nil {
+		log.Printf("createHandler: %s\n", err.Error())
+		if err == middleware.ErrBodyLimitExceeded {
+			w.WriteHeader(http.StatusRequestEntityTooLarge)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 		return
 	}
 
 	if t.Interval <= 0 || t.URL == "" {
+		log.Printf("createHandler: invalid object\n")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	id := fetcher.Save(t)
+	id := fetch.Save(t)
 
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(w, "{\"id\": %d}\n", id)
@@ -40,31 +45,35 @@ func createHandler(w http.ResponseWriter, req *http.Request) {
 func deleteHandler(w http.ResponseWriter, req *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(req, "id"))
 	if err != nil {
+		log.Printf("deleteHandler: %s\n", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err := fetcher.Remove(fetcher.ID(id)); err != nil {
+	if err := fetch.Remove(fetcher.ID(id)); err != nil {
+		log.Printf("deleteHandler: %s\n", err.Error())
 		w.WriteHeader(http.StatusNotFound)
 	}
 }
 
 func listHandler(w http.ResponseWriter, req *http.Request) {
-	fetchers := fetcher.List()
+	tasks := fetch.List()
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(fetchers)
+	json.NewEncoder(w).Encode(tasks)
 }
 
 func historyHandler(w http.ResponseWriter, req *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(req, "id"))
 	if err != nil {
+		log.Printf("historyHandler: %s\n", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	history, err := fetcher.History(fetcher.ID(id))
+	history, err := fetch.History(fetcher.ID(id))
 	if err != nil {
+		log.Printf("historyHandler: %s\n", err.Error())
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -74,10 +83,13 @@ func historyHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	fetch = fetcher.NewFetcher()
+
 	r := chi.NewRouter()
 
 	MB := 1000 * 1000
 	r.Use(middleware.BodyLimit(MB, http.MethodPost))
+	r.Use(chimid.Logger)
 
 	r.Route("/api/fetcher", func(r chi.Router) {
 		r.Post("/", createHandler)
@@ -88,5 +100,5 @@ func main() {
 		})
 	})
 
-	http.ListenAndServe(":8080", r)
+	log.Fatal(http.ListenAndServe(":8080", r))
 }

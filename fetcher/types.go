@@ -6,15 +6,15 @@ type (
 	// Interval is type used to store time duration, in seconds
 	Interval float64
 
-	// Task stores information used to create worker
-	Task struct {
+	// TaskRequest stores information used to create worker
+	TaskRequest struct {
 		URL      string `json:"url"`
 		Interval `json:"interval"`
 	}
 
-	// Fetcher stores information used to describe worker
-	Fetcher struct {
-		Task
+	// TaskInfo stores information used to describe worker
+	TaskInfo struct {
+		TaskRequest
 		ID `json:"id"`
 	}
 

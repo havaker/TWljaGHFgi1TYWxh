@@ -3,12 +3,14 @@ package fetcher
 import (
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 )
 
 type state struct {
-	Fetcher
+	TaskInfo
 	results []Result
+	mutex   *sync.Mutex
 }
 
 func (s *state) downloadURL(c http.Client) *string {
@@ -41,7 +43,7 @@ func (s *state) fetch() {
 	res.CreatedAt = float64(end.UnixNano()) / 1e9
 	res.Duration = end.Sub(start).Seconds()
 
-	mutex.Lock()
-	defer mutex.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	s.results = append(s.results, res)
 }
